@@ -1,6 +1,7 @@
 import {
   refreshWinterArc
 } from './refreshEngine'
+
 import {
   getStoredData,
   setStoredData
@@ -8,32 +9,20 @@ import {
 
 export type DailyRecord = {
   date: string
-
   started: boolean
-
   water: number
-
   sleep: string
-
   breakfast: boolean
-
   lunch: boolean
-
   dinner: boolean
-
   tablets: boolean
-
   familyCall: boolean
-
   thoughts: string
 }
 
 export type WinterArcState = {
-
   academicProgress: Record<string, string>
-
   skillProgress: Record<string, number>
-
   examDates: Record<string, string>
 
   habits: {
@@ -47,21 +36,18 @@ export type WinterArcState = {
     thoughts: string
   }
 
+  habitsDate: string
+
   streak: number
-
   lastStart: string
-
   arcStartDate: string
 
   dailyHistory: Record<string, DailyRecord>
 }
 
 export const defaultWinterArcState: WinterArcState = {
-
   academicProgress: {},
-
   skillProgress: {},
-
   examDates: {},
 
   habits: {
@@ -75,46 +61,37 @@ export const defaultWinterArcState: WinterArcState = {
     thoughts: ''
   },
 
+  habitsDate: '',
+
   streak: 0,
-
   lastStart: '',
-
   arcStartDate: '',
 
   dailyHistory: {}
 }
 
-const STATE_KEY =
-  'winterArcState'
+const STATE_KEY = 'winterArcState'
 
-export function getWinterArcState():
-  WinterArcState {
-
+export function getWinterArcState(): WinterArcState {
   const stored =
     getStoredData<unknown>(
       STATE_KEY,
       defaultWinterArcState
     )
 
-
   if (
     !stored ||
     typeof stored !== 'object'
   ) {
-
     return {
       ...defaultWinterArcState
     }
-
   }
-
 
   const data =
     stored as Partial<WinterArcState>
 
-
   return {
-
     academicProgress:
       data.academicProgress &&
       typeof data.academicProgress === 'object'
@@ -134,19 +111,18 @@ export function getWinterArcState():
         : {},
 
     habits: {
-
       ...defaultWinterArcState.habits,
-
       ...(data.habits || {})
-
     },
+
+    habitsDate:
+      typeof data.habitsDate === 'string'
+        ? data.habitsDate
+        : '',
 
     streak:
       typeof data.streak === 'number'
-        ? Math.max(
-            0,
-            data.streak
-          )
+        ? Math.max(0, data.streak)
         : 0,
 
     lastStart:
@@ -164,10 +140,9 @@ export function getWinterArcState():
       typeof data.dailyHistory === 'object'
         ? data.dailyHistory
         : {}
-
   }
-
 }
+
 export function saveWinterArcState(
   state: WinterArcState
 ) {

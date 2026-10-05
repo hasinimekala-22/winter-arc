@@ -3,104 +3,301 @@ import {
   saveWinterArcState
 } from './winterArcState'
 
+const MIGRATION_KEY =
+  'winterArcMigrationV2'
+
 export function migrateOldData() {
 
-  const existingState =
-    localStorage.getItem('winterArcState')
-
-  if (existingState) {
+  if (
+    localStorage.getItem(
+      MIGRATION_KEY
+    ) === 'done'
+  ) {
     return
   }
+
+  const state =
+    getWinterArcState()
+
+  /*
+   * --------------------------------
+   * ACADEMIC PROGRESS
+   * --------------------------------
+   */
 
   const oldProgress =
     localStorage.getItem(
       'winterArcProgress'
     )
 
+  if (oldProgress) {
+
+    try {
+
+      const parsedProgress =
+        JSON.parse(oldProgress)
+
+      state.academicProgress = {
+        ...(state.academicProgress || {}),
+        ...parsedProgress
+      }
+
+    } catch {
+      console.warn(
+        'Could not migrate old academic progress'
+      )
+    }
+  }
+
+  /*
+   * --------------------------------
+   * SKILL PROGRESS
+   * --------------------------------
+   */
+
   const oldSkills =
     localStorage.getItem(
       'winterArcSkills'
     )
+
+  if (oldSkills) {
+
+    try {
+
+      const parsedSkills =
+        JSON.parse(oldSkills)
+
+      state.skillProgress = {
+        ...(state.skillProgress || {}),
+        ...parsedSkills
+      }
+
+    } catch {
+      console.warn(
+        'Could not migrate old skill progress'
+      )
+    }
+  }
+
+  /*
+   * --------------------------------
+   * EXAM DATES
+   * --------------------------------
+   */
 
   const oldExamDates =
     localStorage.getItem(
       'winterArcExamDates'
     )
 
-  const state =
-    getWinterArcState()
-
-  if (oldProgress) {
-
-    state.academicProgress =
-      JSON.parse(oldProgress)
-  }
-
-  if (oldSkills) {
-
-    state.skillProgress =
-      JSON.parse(oldSkills)
-  }
-
   if (oldExamDates) {
 
-    state.examDates =
-      JSON.parse(oldExamDates)
+    try {
+
+      const parsedExamDates =
+        JSON.parse(oldExamDates)
+
+      state.examDates = {
+        ...(state.examDates || {}),
+        ...parsedExamDates
+      }
+
+    } catch {
+      console.warn(
+        'Could not migrate old exam dates'
+      )
+    }
   }
 
-  state.habits.water =
+  /*
+   * --------------------------------
+   * OLD HABITS
+   * --------------------------------
+   */
+
+  const oldHabitDate =
+    localStorage.getItem(
+      'winterArcHabitDate'
+    )
+
+  const oldWater =
     Number(
       localStorage.getItem(
         'winterArcWater'
       ) || '0'
     )
 
-  state.habits.sleep =
+  const oldSleep =
     localStorage.getItem(
       'winterArcSleep'
     ) || ''
 
-  state.habits.breakfast =
+  const oldBreakfast =
     localStorage.getItem(
       'winterArcBreakfast'
     ) === 'true'
 
-  state.habits.lunch =
+  const oldLunch =
     localStorage.getItem(
       'winterArcLunch'
     ) === 'true'
 
-  state.habits.dinner =
+  const oldDinner =
     localStorage.getItem(
       'winterArcDinner'
     ) === 'true'
 
-  state.habits.tablets =
+  const oldTablets =
     localStorage.getItem(
       'winterArcTablets'
     ) === 'true'
 
-  state.habits.familyCall =
+  const oldFamilyCall =
     localStorage.getItem(
       'winterArcFamilyCall'
     ) === 'true'
 
-  state.habits.thoughts =
+  const oldThoughts =
     localStorage.getItem(
       'winterArcThoughts'
     ) || ''
 
-  state.streak =
+  /*
+   * Only create the legacy history record
+   * if it doesn't already exist.
+   */
+
+  if (
+    oldHabitDate &&
+    !state.dailyHistory?.[oldHabitDate]
+  ) {
+
+    state.dailyHistory = {
+
+      ...(state.dailyHistory || {}),
+
+      [oldHabitDate]: {
+
+        date:
+          oldHabitDate,
+
+        started:
+          localStorage.getItem(
+            'winterArcLastStart'
+          ) === oldHabitDate,
+
+        water:
+          oldWater,
+
+        sleep:
+          oldSleep,
+
+        breakfast:
+          oldBreakfast,
+
+        lunch:
+          oldLunch,
+
+        dinner:
+          oldDinner,
+
+        tablets:
+          oldTablets,
+
+        familyCall:
+          oldFamilyCall,
+
+        thoughts:
+          oldThoughts
+      }
+    }
+  }
+
+  /*
+   * --------------------------------
+   * START / STREAK
+   * --------------------------------
+   */
+
+  const oldLastStart =
+    localStorage.getItem(
+      'winterArcLastStart'
+    ) || ''
+
+  const oldStreak =
     Number(
       localStorage.getItem(
         'winterArcStartStreak'
       ) || '0'
     )
 
-  state.lastStart =
-    localStorage.getItem(
-      'winterArcLastStart'
-    ) || ''
+  if (oldLastStart) {
+    state.lastStart =
+      oldLastStart
+  }
 
-  saveWinterArcState(state)
+  if (oldStreak > 0) {
+    state.streak =
+      Math.max(
+        state.streak || 0,
+        oldStreak
+      )
+  }
+
+  if (
+    oldLastStart &&
+    !state.arcStartDate
+  ) {
+
+    state.arcStartDate =
+      oldLastStart
+  }
+
+  /*
+   * --------------------------------
+   * HABITS DATE
+   * --------------------------------
+   *
+   * If today's history already exists,
+   * today's habits belong to today.
+   *
+   * Otherwise use the legacy habit date.
+   */
+
+  if (!state.habitsDate) {
+
+    const today =
+      new Date()
+        .toISOString()
+        .slice(0, 10)
+
+    if (
+      state.dailyHistory?.[today]
+    ) {
+
+      state.habitsDate =
+        today
+
+    } else if (
+      oldHabitDate
+    ) {
+
+      state.habitsDate =
+        oldHabitDate
+
+    } else {
+
+      state.habitsDate =
+        today
+    }
+  }
+
+  saveWinterArcState(
+    state
+  )
+
+  localStorage.setItem(
+    MIGRATION_KEY,
+    'done'
+  )
 }

@@ -100,6 +100,11 @@ function createTodayRecord(): DailyRecord {
 
 /*
  * SAVE TODAY
+ *
+ * This intentionally updates today's
+ * record from the CURRENT active habits.
+ *
+ * It never touches previous dates.
  */
 
 export function saveTodayRecord(): void {
@@ -113,7 +118,6 @@ export function saveTodayRecord(): void {
   const record =
     createTodayRecord()
 
-
   state.dailyHistory = {
 
     ...(state.dailyHistory || {}),
@@ -123,6 +127,13 @@ export function saveTodayRecord(): void {
 
   }
 
+  /*
+   * Make sure the active habits are explicitly
+   * associated with today's date.
+   */
+
+  state.habitsDate =
+    today
 
   saveWinterArcState(
     state
@@ -140,7 +151,6 @@ export function getDailyHistory():
 
   const state =
     getWinterArcState()
-
 
   return Object.values(
     state.dailyHistory || {}
@@ -166,13 +176,11 @@ export function getRecentHistory(
   const history =
     getDailyHistory()
 
-
   const safeDays =
     Math.max(
       1,
       Math.floor(days)
     )
-
 
   return history.slice(
     -safeDays
@@ -191,7 +199,6 @@ export function getHistoryForDate(
 
   const state =
     getWinterArcState()
-
 
   return (
     state.dailyHistory?.[date]
@@ -214,7 +221,6 @@ export function hasTodayRecord():
 
   const today =
     getToday()
-
 
   return Boolean(
     state.dailyHistory?.[today]
@@ -249,7 +255,6 @@ export function getHistoryStats() {
   const history =
     getDailyHistory()
 
-
   if (
     history.length === 0
   ) {
@@ -270,13 +275,11 @@ export function getHistoryStats() {
 
   }
 
-
   const daysStarted =
     history.filter(
       day =>
         day.started
     ).length
-
 
   const averageWater =
     Math.round(
@@ -298,7 +301,6 @@ export function getHistoryStats() {
       ) * 10
     ) / 10
 
-
   const sleepDays =
     history.filter(
       day =>
@@ -306,7 +308,6 @@ export function getHistoryStats() {
           day.sleep
         ) > 0
     )
-
 
   const averageSleep =
     sleepDays.length > 0
@@ -330,7 +331,6 @@ export function getHistoryStats() {
 
       : 0
 
-
   const mealsLogged =
     history.reduce(
       (
@@ -345,7 +345,6 @@ export function getHistoryStats() {
         ].filter(Boolean).length,
       0
     )
-
 
   return {
 
